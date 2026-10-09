@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#C8553D"><link rel="icon" href="icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Santali Shala – Hindi to Santali Classroom Translator</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#FFF4E0;--card:#FFFDF7;--ink:#4A2C1A;--mut:#8A6A55;--red:#C8553D;--gold:#F2A900;--leaf:#2E7D4F;--line:#EBD5B0}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#3A2418;--card:#4A2F20;--ink:#FFF0D6;--mut:#D9B99A;--line:#6B4630}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans Devanagari","Noto Sans Ol Chiki",system-ui,sans-serif;line-height:1.45}
+header{padding:20px 16px;background:linear-gradient(120deg,var(--red),var(--gold));color:#fff;text-align:center}
+header h1{margin:0;font-size:1.6rem}header p{margin:4px 0 0;font-size:.9rem;opacity:.95}
+main{max-width:980px;margin:0 auto;padding:16px;display:grid;gap:16px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:16px}
+h2{margin:0 0 10px;font-size:1.1rem;color:var(--red)}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+#mic{width:84px;height:84px;border-radius:50%;border:0;background:var(--red);color:#fff;font-size:2rem;cursor:pointer;box-shadow:0 0 0 6px var(--line)}
+#mic.on{background:var(--leaf);animation:p 1.1s infinite}
+@keyframes p{50%{box-shadow:0 0 0 16px rgba(46,125,79,.25)}}
+.box{flex:1;min-width:220px;min-height:64px;padding:10px 12px;border-radius:12px;background:var(--bg);border:1px dashed var(--mut)}
+.lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
+#sat{font-size:1.25rem;font-weight:600;color:var(--leaf)}
+input[type=text]{flex:1;min-width:200px;padding:10px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);font:inherit}
+button.b{padding:10px 16px;border-radius:10px;border:0;background:var(--gold);color:#4A2C1A;font-weight:700;cursor:pointer}
+.tag{display:inline-block;padding:2px 10px;border-radius:99px;background:var(--leaf);color:#fff;font-size:.75rem}
+.wrap{overflow-x:auto}table{width:100%;border-collapse:collapse}
+th{background:var(--red);color:#fff;text-align:left}th,td{padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.fc{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.f{perspective:700px;height:170px;cursor:pointer}
+.in{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.f.flip .in{transform:rotateY(180deg)}
+.s{position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;padding:12px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.fr{background:var(--gold);color:#4A2C1A}.bk{background:var(--leaf);color:#fff;transform:rotateY(180deg)}
+.ol{font-size:2rem}.small{font-size:.8rem;opacity:.9}
+.chip{padding:6px 12px;border-radius:99px;border:2px solid var(--gold);background:var(--card);color:var(--ink);cursor:pointer;font:inherit;font-size:.85rem}
+.note{font-size:.8rem;color:var(--mut)}
+</style></head><body>
+<header><h1>🌾 Santali Shala · संताली शाला</h1><p>Speak Hindi → hear Santali → learn with flashcards · SIH26042 · Jharkhand FLN / NIPUN Bharat</p></header>
+<main>
+<section class="card"><h2>1 · Speak in Hindi</h2>
+<div class="row"><button id="mic" aria-label="Microphone">🎤</button>
+<div class="box"><div class="lbl">Hindi (recognised)</div><div id="hin">Tap the mic and speak… / माइक दबाकर बोलें</div></div>
+<div class="box"><div class="lbl">Santali <span class="tag" id="ms">– ms</span></div><div id="sat">—</div><div id="rom" class="note"></div></div></div>
+<div class="row" id="chips" style="margin-top:12px"></div>
+<div class="row" style="margin-top:12px"><input type="text" id="txt" lang="hi" placeholder="Or type Hindi, e.g. किताब खोलो"><button class="b" id="go">Translate</button><button class="b" id="dl" style="display:none;background:var(--leaf);color:#fff">⬇ Mic-ready copy</button></div>
+<p class="note" id="st">Hindi speech in → dataset lookup (instant) or AI model for new sentences → Santali announced automatically.</p></section>
+
+<section class="card"><h2>2 · Auto bilingual table (unique words only)</h2>
+<div class="wrap"><table><thead><tr><th>#</th><th>Hindi</th><th>Santali (Ol Chiki)</th><th>Roman</th><th>Category</th></tr></thead><tbody id="tb"></tbody></table></div></section>
+
+<section class="card"><h2>3 · Flashcards (auto-generated)</h2><button class="b" id="cb" style="margin-bottom:10px">✨ AI flashcard examples</button><div class="fc" id="fc"><span class="note">Flashcards appear as words are translated. Tap a card to flip.</span></div></section>
+<p class="note" id="db"></p><p class="note">Seed dataset from the SIH pack. Expand with COILD, Bharatavani &amp; community validation; entries need native-speaker review.</p>
+</main>
+<script>
+const V=`एक|mit'|ᱢᱤᱫ|numbers
+दो|bar|ᱵᱟᱨ|numbers
+तीन|pe|ᱯᱮ|numbers
+चार|pon|ᱯᱩᱱ|numbers
+पाँच|mɔ̃ɽɛ̃|ᱢᱚᱬᱮ|numbers
+दस|gel|ᱜᱮᱞ|numbers
+सौ|sae|ᱥᱟᱭ|numbers
+लाल|arag|ᱟᱨᱟᱜ|colors
+हरा|hariyar|ᱦᱟᱹᱨᱭᱟᱹᱲ|colors
+पीला|sasang|ᱥᱟᱥᱟᱝ|colors
+सफेद|pond|ᱯᱩᱸᱰ|colors
+काला|hende|ᱦᱮᱸᱫᱮ|colors
+रंग|rong|ᱨᱚᱝ|colors
+सिर|bohok'|ᱵᱚᱦᱚᱜ|body
+आँख|met'|ᱢᱮᱫ|body
+कान|lutur|ᱞᱩᱛᱩᱨ|body
+हाथ|ti|ᱛᱤ|body
+पैर|jaŋga|ᱡᱟᱸᱜᱟ|body
+माँ|eŋga|ᱮᱸᱜᱟ|family
+पिता|apu|ᱟᱹᱯᱩ|family
+बच्चा|hopon|ᱦᱚᱯᱚᱱ|family
+बच्चे|gidra|ᱜᱤᱫᱽᱨᱟ|family
+बच्चों|gidra ko|ᱜᱤᱫᱽᱨᱟ ᱠᱚ|family
+शिक्षक|master|ᱢᱟᱥᱴᱟᱨ|school
+स्कूल|iskul|ᱤᱥᱠᱩᱞ|school
+किताब|puthi|ᱯᱩᱛᱷᱤ|school
+कलम|kalam|ᱠᱟᱞᱟᱢ|school
+स्लेट|slate|ᱥᱞᱮᱴ|school
+बोर्ड|board|ᱵᱚᱨᱰ|school
+पाठ|path|ᱯᱟᱴᱷ|school
+अक्षर|akshar|ᱟᱠᱷᱚᱨ|literacy
+शब्द|sabda|ᱥᱟᱵᱫᱟ|literacy
+वाक्य|bakya|ᱵᱟᱠᱭᱟ|literacy
+पढ़ो|parhao me|ᱯᱟᱲᱦᱟᱣ ᱢᱮ|verbs
+लिखो|ol me|ᱚᱞ ᱢᱮ|verbs
+गिनो|lekha me|ᱞᱮᱠᱷᱟ ᱢᱮ|verbs
+जोड़ो|jorao me|ᱡᱚᱲᱟᱣ ᱢᱮ|numeracy
+घटाओ|kom me|ᱠᱚᱢ ᱢᱮ|numeracy
+गिनती|lekha|ᱞᱮᱠᱷᱟ|numeracy
+पानी|dak'|ᱫᱟᱜ|nature
+आग|seŋgel|ᱥᱮᱸᱜᱮᱞ|nature
+पेड़|dare|ᱫᱟᱨᱮ|nature
+सूरज|siŋgi|ᱥᱤᱸᱜᱤ|nature
+घर|oraq'|ᱳᱲᱟᱜ|daily
+खाना|jom|ᱡᱚᱢ|daily
+दूध|toa|ᱛᱳᱣᱟ|daily
+कुत्ता|seta|ᱥᱮᱛᱟ|animals
+बिल्ली|pusi|ᱯᱩᱥᱤ|animals
+गाय|gai|ᱜᱟᱭ|animals
+मछली|haku|ᱦᱟᱹᱠᱩ|animals
+चिड़िया|ceɽe|ᱪᱮᱬᱮ|animals
+बकरी|merom|ᱢᱮᱨᱚᱢ|animals
+मुर्गी|sim|ᱥᱤᱢ|animals
+चावल|daka|ᱫᱟᱠᱟ|food
+रोटी|roti|ᱨᱚᱴᱤ|food
+आम|ul|ᱩᱞ|food
+बड़ा|maraŋ|ᱢᱟᱨᱟᱝ|size
+छोटा|hudiñ|ᱦᱩᱰᱤᱧ|size
+लंबा|jiliñ|ᱡᱤᱞᱤᱧ|size
+गोल|gol|ᱜᱚᱞ|shapes
+आज|tikin|ᱛᱤᱠᱤᱱ|time
+कल|gapa|ᱜᱟᱯᱟ|time
+बहुत|adi|ᱟᱹᱰᱤ|general
+अच्छा|bese|ᱵᱮᱥ|general
+हाँ|hã|ᱦᱟᱹ|general
+नहीं|baŋ|ᱵᱟᱝ|general
+नमस्ते|johar|ᱡᱚᱦᱟᱨ|greeting
+गाँव|ātu|ᱟᱛᱩ|community
+पहाड़|buru|ᱵᱩᱨᱩ|nature
+चाँद|chando|ᱪᱟᱸᱫᱳ|nature
+तारा|ipil|ᱤᱯᱤᱞ|nature
+फूल|bahā|ᱵᱟᱦᱟ|nature
+नदी|gaḍa|ᱜᱟᱲᱟ|nature
+लड़की|kuṛi|ᱠᱩᱲᱤ|people
+लड़का|koṛa|ᱠᱚᱲᱟ|people
+दोस्त|saṅgi|ᱥᱟᱸᱜᱤ|people
+हाथी|hati|ᱦᱟᱛᱤ|animals
+नाक|mu|ᱢᱩ|body
+नाम|ñutum|ᱧᱩᱛᱩᱢ|general
+सीखो|sikhao me|ᱥᱤᱠᱷᱟᱣ ᱢᱮ|verbs
+खेलो|kudi me|ᱠᱩᱰᱤ ᱢᱮ|verbs
+छह|turui||numbers
+सात|eae||numbers
+आठ|iral||numbers
+नौ|are||numbers
+मैं|iñ||pronouns
+तुम|am||pronouns
+आप|ape||pronouns
+वह|uni||pronouns
+यह|nia||pronouns
+हम|abo||pronouns
+क्या|cet'||question
+कौन|okoe||question
+कहाँ|okare||question
+कैसे|cele||question
+और|ar||general
+दिन|sin||time
+गणित|ganit||school
+कक्षा|kelas||school
+परीक्षा|parikha||school
+कहानी|kahni||school
+कविता|kobita||school
+चित्र|citra||school
+कॉपी|copy||school
+दरवाजा|dorja||school
+आओ|hijuk' me||verbs
+जाओ|sen me||verbs
+खाओ|jom me||verbs
+पिओ|nu me||verbs
+देखो|nel me||verbs
+बोलो|men me||verbs
+नाचो|enec' me||verbs
+धन्यवाद|dhanyabad||greeting
+बीस|isi||numbers
+हज़ार|hajar||numbers
+शून्य|sunya||numbers
+आधा|adha||numbers
+नीला|nila||colors
+दाँत|data||body
+मुँह|mucat'||body
+खून|mayom||body
+दादा|haram||family
+दादी|budhi||family
+भाई|dada||family
+आदमी|hoṛ||people
+औरत|era||people
+गुरु|guru||school
+पेंसिल|pensil||school
+बैग|bag||school
+मेज|mej||school
+कुर्सी|kursi||school
+खिड़की|khirki||school
+घंटी|ghanti||school
+मैदान|maidan||school
+कागज|kagoj||school
+छुट्टी|chuṭi||school
+प्रश्न|prasna||school
+उत्तर|uttar||school
+भाषा|bhasa||school
+विज्ञान|vigyan||school
+इतिहास|itihas||school
+नक्शा|naksa||school
+पत्ता|sakam||nature
+मिट्टी|hasa||nature
+जंगल|jaŋgal||nature
+बारिश|baris||nature
+हवा|hawa||nature
+आसमान|asman||nature
+पत्थर|pathar||nature
+खेत|khet||nature
+कुआँ|kua||nature
+रास्ता|ɖahar||nature
+घोड़ा|sadom||animals
+भैंस|kaɽa||animals
+सुअर|sukri||animals
+साँप|bin||animals
+नमक|bulun||food
+तेल|sunum||food
+चीनी|cini||food
+चाय|cha||food
+दाल|dal||food
+आलू|alu||food
+प्याज|piyaj||food
+केला|kera||food
+शहर|sahar||places
+बाजार|bajar||places
+अस्पताल|aspatal||places
+मेला|mela||places
+नया|nawa||adjectives
+यहाँ|ne||general
+मेरा|iñak'||pronouns
+तुम्हारा|amak'||pronouns
+उसका|unak'||pronouns
+क्यों|cet' lagit'||question
+कितना|tinak'||question
+साबुन|sabun||health
+माफ़ी|maph||general
+गीत|seren||culture
+मांदर|madal||culture
+सोहराय|sohrae||culture
+बाहा पर्व|baha parab||culture
+सरहुल|sarhul||culture
+करम|karam||culture
+माझी|majhi||culture
+संताल|santal||culture
+दौड़ो|duṛ me||verbs
+उठो|tiŋgu me||verbs
+बैठो|duɽup' me||verbs
+लो|nam me||verbs
+खोलो|khol me||verbs
+बंद करो|bondo me||verbs`;
+const S=`जोहार बच्चों|Johar gidra ko!|ᱡᱚᱦᱟᱨ ᱜᱤᱫᱽᱨᱟ ᱠᱚ!|greeting
+कैसे हो तुम सब|Ape do cele menak'a?|ᱟᱯᱮ ᱫᱚ ᱪᱮᱞᱮ ᱢᱮᱱᱟᱜᱼᱟ?|greeting
+बैठ जाओ|Duɽup' me|ᱫᱩᱲᱩᱵ ᱢᱮ|instruction
+खड़े हो जाओ|Tiŋgu me|ᱛᱤᱸᱜᱩ ᱢᱮ|instruction
+चुप रहो|Thirok' me|ᱛᱷᱤᱨᱚᱜ ᱢᱮ|instruction
+ध्यान से सुनो|Añjom me bese|ᱟᱸᱡᱚᱢ ᱢᱮ ᱵᱮᱥ|instruction
+किताब खोलो|Puthi khol me|ᱯᱩᱛᱷᱤ ᱠᱷᱚᱞ ᱢᱮ|instruction
+अच्छा किया|Bese keda|ᱵᱮᱥ ᱠᱮᱫᱟ|praise
+बहुत अच्छा|Adi bese|ᱟᱹᱰᱤ ᱵᱮᱥ|praise
+एक से दस तक गिनो|Mit' khon gel dhabic' lekha me|ᱢᱤᱫ ᱠᱷᱚᱱ ᱜᱮᱞ ᱫᱷᱟᱹᱵᱤᱡ ᱞᱮᱠᱷᱟ ᱢᱮ|numeracy
+यह कितने हैं|Nia do tinak'a?|ᱱᱤᱭᱟᱹ ᱫᱚ ᱛᱤᱱᱟᱜᱼᱟ?|numeracy
+कितने बच्चे हैं|Tinak' gidra menak'a?|ᱛᱤᱱᱟᱜ ᱜᱤᱫᱽᱨᱟ ᱢᱮᱱᱟᱜᱼᱟ?|numeracy
+यह अक्षर क्या है|Nia akshar do cet'a?|ᱱᱤᱭᱟᱹ ᱟᱠᱷᱚᱨ ᱫᱚ ᱪᱮᱫᱟ?|literacy
+शब्द पढ़ो|Sabda parhao me|ᱥᱟᱵᱫᱟ ᱯᱟᱲᱦᱟᱣ ᱢᱮ|literacy
+वाक्य बनाओ|Bakya banaw me|ᱵᱟᱠᱭᱟ ᱵᱟᱱᱟᱣ ᱢᱮ|literacy
+तुम्हारा नाम क्या है|Amak' ñutum do cet'a?|ᱟᱢᱟᱜ ᱧᱩᱛᱩᱢ ᱫᱚ ᱪᱮᱫᱟ?|dialogue
+क्या तुम समझ गए|Am do bujhau keda?|ᱟᱢ ᱫᱚ ᱵᱩᱡᱷᱟᱹᱣ ᱠᱮᱫᱟ?|dialogue
+हाँ समझ गया|Hã, bujhau keda|ᱦᱟᱹ, ᱵᱩᱡᱷᱟᱹᱣ ᱠᱮᱫᱟ|dialogue
+नहीं समझ नहीं आया|Baŋ, bujhau baŋu|ᱵᱟᱝ, ᱵᱩᱡᱷᱟᱹᱣ ᱵᱟᱝᱩ|dialogue
+फिर से बोलो|Barikate men me|ᱵᱟᱨᱤᱠᱟᱛᱮ ᱢᱮᱱ ᱢᱮ|dialogue
+आज का पाठ खत्म|Tikinak' path khatam|ᱛᱤᱠᱤᱱᱟᱜ ᱯᱟᱴᱷ ᱠᱷᱟᱛᱟᱢ|closing
+घर जाओ|Oraq' sen me|ᱳᱲᱟᱜ ᱥᱮᱱ ᱢᱮ|closing
+आज हम रंग सीखेंगे|Tikin do rong sikhao bona|ᱛᱤᱠᱤᱱ ᱫᱚ ᱨᱚᱝ ᱥᱤᱠᱷᱟᱣ ᱵᱚᱱᱟ|lesson
+यह लाल रंग है|Nia do arag rong a|ᱱᱤᱭᱟᱹ ᱫᱚ ᱟᱨᱟᱜ ᱨᱚᱝ ᱟ|lesson
+फिर से कोशिश करो|Barikate koshish me|ᱵᱟᱨᱤᱠᱟᱛᱮ ᱠᱚᱥᱤᱥ ᱢᱮ|encouragement
+तुम बहुत होशियार हो|Am adi hushiar menama|ᱟᱢ ᱟᱹᱰᱤ ᱦᱩᱥᱤᱭᱟᱨ ᱢᱮᱱᱟᱢᱟ|praise
+घर पर अभ्यास करो|Oraq' re abhyas me|ᱳᱲᱟᱜ ᱨᱮ ᱟᱵᱷᱭᱟᱥ ᱢᱮ|homework
+कल फिर मिलेंगे|Gapa barikate nepel bona|ᱜᱟᱯᱟ ᱵᱟᱨᱤᱠᱟᱛᱮ ᱱᱮᱯᱮᱞ ᱵᱚᱱᱟ|closing
+पानी पिओ|Dak' nu me||instruction
+खाना खाओ|Jom me||instruction
+यहाँ आओ|Hijuk' me||instruction
+इधर देखो|Nel me||instruction
+बोर्ड पर देखो|Board re nel me||instruction
+कॉपी खोलो|Copy khol me||instruction
+किताब बंद करो|Puthi bondo me||instruction
+दरवाजा खोलो|Dorja khol me||instruction
+हाथ उठाओ|Ti uṭaw me||instruction
+हाथ धोओ|Ti dho me||instruction
+सब बच्चे बैठो|Gidra ko duɽup' me||instruction
+सब मिलकर बोलो|Sanam men me||instruction
+गिनती लिखो|Lekha ol me||numeracy
+अपना नाम लिखो|Amak' ñutum ol me||literacy
+चित्र बनाओ|Citra banaw me||lesson
+कहानी सुनो|Kahni añjom me||lesson
+कविता पढ़ो|Kobita parhao me||lesson
+शाबाश बच्चों|Adi bese gidra ko||praise
+ठीक है|Bese||general
+धन्यवाद|Dhanyabad||greeting
+तुम कहाँ हो|Am do okare menak'a?||question
+तुम्हारा घर कहाँ है|Amak' oraq' do okare menak'a?||question
+यह क्या है|Nia do cet'a?||question
+वह कौन है|Uni do okoe a?||question
+मेरा नाम राम है|Iñak' ñutum do Ram a||dialogue
+मुझे समझ आया|Iñ do bujhau keda||dialogue
+मुझे समझ नहीं आया|Iñ do bujhau baŋu||dialogue
+मुझे पानी दो|Iñ lagit' dak' em me||daily
+मुझे किताब दो|Iñ lagit' puthi em me||daily
+यह मेरा घर है|Nia do iñak' oraq' a||daily
+यह मेरी किताब है|Nia do iñak' puthi a||daily
+यह तुम्हारी कलम है|Nia do amak' kalam a||daily
+मेरा घर गाँव में है|Iñak' oraq' do ātu re menak'a||daily
+मैं स्कूल जाता हूँ|Iñ do iskul re senok'a||daily
+मैं पढ़ता हूँ|Iñ do parhaok'a||daily
+मैं खाना खाता हूँ|Iñ do jomok'a||daily
+मैं पानी पीता हूँ|Iñ do dak' nuok'a||daily
+बच्चे स्कूल जाते हैं|Gidra ko do iskul re senok'a ko||daily
+शिक्षक पढ़ाते हैं|Master do parhaok'a||daily
+पेड़ हरा है|Dare do hariyar a||lesson
+सूरज लाल है|Siŋgi do arag a||lesson
+गाय दूध देती है|Gai do toa em ok'a||lesson
+मछली पानी में रहती है|Haku do dak' re menak'a||lesson
+चिड़िया पेड़ पर है|Ceɽe do dare re menak'a||lesson
+पाँच और पाँच दस होते हैं|Mɔ̃ɽɛ̃ ar mɔ̃ɽɛ̃ gel hoyok'a||numeracy
+एक और एक दो होते हैं|Mit' ar mit' bar hoyok'a||numeracy`;
+function ol(r){const D={kh:"ᱠᱷ",gh:"ᱜᱷ",jh:"ᱡᱷ",th:"ᱛᱷ",dh:"ᱫᱷ",ph:"ᱯᱷ",bh:"ᱵᱷ",ch:"ᱪ"},C={k:"ᱠ",g:"ᱜ",c:"ᱪ",j:"ᱡ",t:"ᱛ",d:"ᱫ",n:"ᱱ",p:"ᱯ",b:"ᱵ",m:"ᱢ",r:"ᱨ",l:"ᱞ",s:"ᱥ",h:"ᱦ",y:"ᱭ",w:"ᱣ","ñ":"ᱧ","ŋ":"ᱝ","ṛ":"ᱲ","ɽ":"ᱲ","ṭ":"ᱴ","ḍ":"ᱰ",q:"ᱜ",a:"ᱟ","ɔ":"ᱚ",o:"ᱳ",e:"ᱮ","ɛ":"ᱮ",i:"ᱤ",u:"ᱩ","ā":"ᱟ","ã":"ᱟ"};
+ r=r.toLowerCase().normalize("NFC").replace(/([ɔɛ])\u0303/g,"$1").replace(/'/g,"");let o="";
+ for(let i=0;i<r.length;i++){const d=r.substr(i,2);if(D[d]){o+=D[d];i++}else o+=C[r[i]]||r[i]}return o}
+const parse=t=>t.split("\n").map(l=>{const[h,r,o,c]=l.split("|");return{h,r,o:o||ol(r),c}});
+const W=parse(V),SN=parse(S),norm=s=>s.replace(/[।?!.,]/g,"").replace(/\s+/g," ").trim();
+const wmap=new Map(W.map(x=>[x.h,x])),smap=new Map(SN.map(x=>[x.h,x]));
+const seen=new Set(),$=i=>document.getElementById(i);let n=0;
+
+let sample=null;
+(async()=>{try{sample=await claude.use("sample")}catch(e){}})();
+const STOP=new Set("है हैं का की के से में को पर और तो ही भी था थी".split(" "));
+// Step 1: instant dataset lookup. Step 2: AI model for anything not in the dataset.
+const T=[[/^यह (.+) है$/,"Nia do "," a"],[/^वह (.+) है$/,"Uni do "," a"],[/^(.+) कहाँ है$/,""," do okare menak'a?"],[/^मुझे (.+) दो$/,"Iñ lagit' "," em me"],[/^(.+) दो$/,""," em me"]];
+function translate(txt){
+ const t=norm(txt),tk=t.split(" "),words=[],unk=[];let sen=smap.get(t),note="";
+ if(!sen)for(const[re,pre,post]of T){const m=t.match(re);if(m&&wmap.has(m[1])){const w=wmap.get(m[1]);sen={h:t,r:pre+w.r+post,o:ol(pre)+w.o+ol(post),c:"pattern"};break}}
+ if(!sen){let best=0,bs=null;const a=new Set(tk);for(const q of SN){const b=new Set(q.h.split(" ")),i=[...a].filter(x=>b.has(x)).length,sc=i/(a.size+b.size-i);if(sc>best){best=sc;bs=q}}if(best>=.75){sen=bs;note=" (nearest match)"}}
+ for(let i=0;i<tk.length;){let hit=null,len=0;
+  for(let l=Math.min(3,tk.length-i);l>0;l--){const k=tk.slice(i,i+l).join(" ");if(wmap.has(k)){hit=wmap.get(k);len=l;break}}
+  if(hit){words.push(hit);i+=len}else{if(!STOP.has(tk[i]))unk.push(tk[i]);i++}}
+ return{sen,words,unk,note};
+}
+function speak(t){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="hi-IN";u.rate=.85;u.volume=1;speechSynthesis.speak(u)}catch(e){}}
+const cards=new Map();
+function addRow(x){
+ if(!x||!x.h||seen.has(x.h))return;seen.add(x.h);n++;
+ $("tb").insertAdjacentHTML("beforeend",`<tr><td>${n}</td><td>${x.h}</td><td>${x.o}</td><td>${x.r}</td><td>${x.c||"ai"}</td></tr>`);
+ if(n==1)$("fc").innerHTML="";
+ const ex=SN.find(q=>q.h.includes(x.h)&&q.h!==x.h);
+ const d=document.createElement("div");d.className="f";
+ d.innerHTML=`<div class="in"><div class="s fr"><div class="ol">${x.o}</div><div>${x.r}</div><div class="small">tap to flip</div></div><div class="s bk"><div style="font-size:1.5rem">${x.h}</div><div class="small">${x.c||"ai"}</div><div class="small ex">${ex?ex.h+" → "+ex.r:""}</div></div></div>`;
+ d.onclick=()=>d.classList.toggle("flip");$("fc").appendChild(d);cards.set(x.h,d);
+}
+async function run(txt){
+ if(!txt.trim())return;const t0=performance.now();$("hin").textContent=txt;
+ const r=translate(txt);let items=[],olc="",rom="",src="dataset";
+ if(r.sen){items=[r.sen];olc=r.sen.o;rom=r.sen.r;src=(r.sen.c==='pattern'?'pattern':'dataset')+r.note}
+ else if(r.words.length&&!r.unk.length){items=r.words;olc=r.words.map(w=>w.o).join(" ");rom=r.words.map(w=>w.r).join(" ")}
+ else if(sample){
+  try{$("st").textContent="AI is translating…";
+   const gl=r.words.map(w=>`${w.h}=${w.o} (${w.r})`).join("; ");
+   const j=await sample.json(`Translate this Hindi classroom sentence into Santali (Ol Chiki script) for primary-school children in Jharkhand. Return ONLY JSON: {"olchiki":"...","roman":"...","words":[{"h":"hindi word","o":"ol chiki","r":"roman"}]} where words = up to 6 key content words. Use this trusted glossary where relevant: ${gl||"none"}. Hindi: ${txt}`,{modelTier:"quick"});
+   olc=j.olchiki;rom=j.roman;items=(j.words||[]).map(w=>({...w,c:"ai"}));src="AI";
+  }catch(e){$("st").textContent="AI unavailable ("+(e.code||"error")+") – showing dataset words only."}
+ }
+ if(!olc&&r.words.length){items=r.words;olc=r.words.map(w=>w.o).join(" ");rom=r.words.map(w=>w.r).join(" ");src="dataset (partial)"}
+ const ms=Math.round(performance.now()-t0);
+ $("ms").textContent=ms+" ms · "+src;
+ if(!olc){$("sat").textContent="(could not translate)";$("rom").textContent="";return}
+ $("sat").textContent=olc;$("rom").textContent=rom;$("st").textContent="Listening / ready.";
+ items.forEach(addRow);speak(rom);
+}
+async function aiCards(){
+ if(!sample){$("st").textContent="AI flashcard model is unavailable in this view.";return}
+ const ws=[...cards.keys()].slice(-12);if(!ws.length)return;$("cb").textContent="Generating…";
+ try{const j=await sample.json(`For each Hindi word below (with Santali), write one simple Santali learning sentence for a Class 1-3 child. Return ONLY a JSON array: [{"h":"word","ex_h":"Hindi sentence","ex_r":"Santali roman sentence"}]. Words: ${ws.map(h=>h+"="+[...W,...SN].find(x=>x.h==h)?.r).join("; ")}`,{modelTier:"quick"});
+  j.forEach(c=>{const d=cards.get(c.h);if(d)d.querySelector(".ex").textContent=c.ex_h+" → "+c.ex_r})}
+ catch(e){$("st").textContent="AI flashcards failed: "+(e.code||"error")}
+ $("cb").textContent="✨ AI flashcard examples";
+}
+$("cb").onclick=aiCards;
+"नमस्ते|किताब खोलो|यह क्या है|तुम कहाँ हो|मुझे पानी दो|मैं स्कूल जाता हूँ|पेड़ हरा है|अपना नाम लिखो|शाबाश बच्चों|कल फिर मिलेंगे".split("|").forEach(h=>{const b=document.createElement("button");b.className="chip";b.textContent=h;b.onclick=()=>run(h);$("chips").appendChild(b)});
+$("db").textContent=W.length+" words · "+SN.length+" sentences + auto patterns";
+$("go").onclick=()=>run($("txt").value);
+$("txt").onkeydown=e=>{if(e.key==="Enter")run(e.target.value)};
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec,want=false;
+const MSG={"not-allowed":"Microphone is blocked in this view. Allow the mic (🔒 icon in the address bar), or open the page in its own Chrome/Edge tab. You can also use the keyboard's 🎤 in the text box.","service-not-allowed":"Speech service is blocked in this view. Open the page in its own Chrome/Edge tab.","audio-capture":"No microphone found.","network":"Offline: voice recognition needs internet (or an offline Hindi speech pack). Use the keyboard 🎤 (Gboard offline Hindi), type, or tap a phrase button – translation and Santali speech still work offline.","language-not-supported":"Hindi voice is not available in this browser."};
+async function startMic(){
+ if(!SR){$("st").textContent="This browser has no speech recognition – use Chrome/Edge, or type / use the keyboard 🎤 in the box.";return}
+ try{const m=await navigator.mediaDevices.getUserMedia({audio:true});m.getTracks().forEach(t=>t.stop())}
+ catch(e){$("st").textContent=MSG["not-allowed"]+" ("+(e.name||"error")+")";return}
+ want=true;begin();
+}
+function begin(){
+ rec=new SR();rec.lang="hi-IN";try{if(!navigator.onLine)rec.processLocally=true}catch(e){}rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=1;
+ rec.onstart=()=>{$("mic").classList.add("on");$("st").textContent="Listening… बोलिए"};
+ rec.onend=()=>{if(want){setTimeout(()=>{if(want)try{begin()}catch(e){}},250)}else{$("mic").classList.remove("on");$("st").textContent="Mic stopped."}};
+ rec.onerror=e=>{if(["not-allowed","service-not-allowed","audio-capture"].includes(e.error))want=false;
+  if(e.error!=="no-speech"&&e.error!=="aborted")$("st").textContent=MSG[e.error]||("Mic error: "+e.error)};
+ rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;
+  if(e.results[i].isFinal)run(t);else $("hin").textContent=t}};
+ rec.start();
+}
+$("mic").onclick=()=>{if(want){want=false;try{rec.stop()}catch(e){}return}startMic()};
+
+const emb=(()=>{try{return window.self!==window.top}catch(e){return true}})();
+if(emb){$("dl").style.display="";$("st").textContent="Preview frame detected: browsers often block the mic here. Tap “Mic-ready copy”, open the file in Chrome, and the 🎤 will work. Typing and the keyboard 🎤 work here.";
+ $("dl").onclick=async()=>{try{const d=await claude.use("downloads");if(!d)throw{code:"unavailable"};
+  await d.save({filename:"santali-shala.html",data:"<!DOCTYPE html>\n"+document.documentElement.outerHTML})}
+  catch(e){$("st").textContent="Download not available here ("+(e.code||"error")+"). Use the santali-shala.html file provided in the chat."}}}
+if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js");
+</script></body></html>
